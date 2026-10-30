@@ -50,6 +50,19 @@
   gap: 9px;
   font-weight: 700;
   color: var(--cyan);
+  text-decoration: none;
+}
+
+.brand-emblem {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.brand-emblem-sm {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .status-led {
@@ -137,23 +150,8 @@
   flex-direction: column;
   align-items: center;
   width: min(1240px, 100%);
-  gap: 26px;
+  gap: 20px;
   text-align: center;
-}
-
-.hud-corner {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 8px 14px;
-  border: 1px solid var(--border-grid);
-  background: rgba(3, 9, 20, 0.72);
-  color: var(--blue-bright);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
 }
 
 .logo-link {
@@ -161,13 +159,39 @@
   position: relative;
   z-index: 1;
   max-width: 100%;
-  padding: 18px 22px;
-  border: 1px dashed rgba(143, 202, 255, 0.25);
-  background: rgba(3, 10, 22, 0.52);
+  padding: 14px 24px 20px;
+  border: 1px solid rgba(143, 202, 255, 0.28);
+  background: rgba(3, 10, 22, 0.72);
+  backdrop-filter: blur(4px);
   color: #dceeff;
   text-decoration: none;
   overflow: hidden;
   transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.logo-header-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(143, 202, 255, 0.24);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.logo-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cyan);
+}
+
+.logo-header-right {
+  color: var(--blue-bright);
 }
 
 .logo-link:hover {

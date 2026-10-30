@@ -56,63 +56,98 @@ const FAULT_BUS_CONFIG = {
 
 const EXPERTISE_MODULES = [
   {
-    code: 'ETAP-LF // MOD-01',
-    title: 'LOAD FLOW & BILAN DE PUISSANCE (HTB / HTA / BT)',
-    standard: 'IEC 60364 / NF C 13-200 / Grid Codes',
-    metrics: ['Newton-Raphson & Adaptive', 'Profils ΔU% & Pertes I²R', 'Régleurs en charge (OLTC / AVR)'],
+    code: 'ETAP-LF // 01',
+    title: 'LOAD FLOW & BILAN DE PUISSANCE',
+    standard: 'IEC 60364 • NF C 13-200',
+    metrics: ['Profils ΔU% & Pertes I²R', 'Régleurs OLTC', 'Compensation Q (Mvar)'],
     summary:
-      'Modélisation de réseaux industriels, postes sources 225/90/20 kV, data centers et centrales EnR/BESS. Analyse des régimes N et N-1, dimensionnement thermique des câbles et transformateurs, compensation d’énergie réactive (batteries HT / STATCOM).',
-    asciiFormula: 'S_k = V_k · I_k* = P_k + jQ_k   |   ΔU% = (R·P + X·Q) / U_n²',
+      'Modélisation HTB/HTA (225/90/20 kV), analyse N et N-1, dimensionnement thermique et régulation de tension.',
+    asciiFormula: 'S = P + jQ   |   ΔU% ≈ (R·P + X·Q) / Un²',
   },
   {
-    code: 'ETAP-SC // MOD-02',
-    title: 'CALCULS DE COURANTS DE COURT-CIRCUIT (Icc)',
-    standard: 'IEC 60909-0 / ANSI C37 / IEC 60865',
-    metrics: ['I"k3 / I"k1 / I"k2 (Max & Min)', 'Tenue électrodynamique ip', 'Contrainte thermique Ith (1s)'],
+    code: 'ETAP-SC // 02',
+    title: 'COURANTS DE COURT-CIRCUIT (Icc)',
+    standard: 'IEC 60909 • ANSI C37',
+    metrics: ['I"k3 Max & Min', 'Crête ip', 'Tenue thermique Ith'],
     summary:
-      'Calcul rigoureux des courants de court-circuit symétriques et asymétriques (triphasé franc, biphasé, homopolaire terre). Vérification du Pouvoir de Coupure (PdC) et de Fermeture (PdF) des disjoncteurs HTB/HTA, tenue des jeux de barres.',
-    asciiFormula: 'I"k3 = (c · U_n) / (√3 · Z_k)   |   i_p = κ · √2 · I"k3',
+      'Calculs symétriques et asymétriques (triphasé, biphasé, terre). Validation du Pouvoir de Coupure (PdC) et de Fermeture (PdF).',
+    asciiFormula: 'I"k3 = (c · Un) / (√3 · Zk)   |   ip = κ · √2 · I"k3',
   },
   {
-    code: 'ETAP-STAR // MOD-03',
-    title: 'PLAN DE PROTECTION & SÉLECTIVITÉ (TCC)',
-    standard: 'IEC 60255 / IEEE 242 (Buff Book)',
-    metrics: ['Courbes TCC (SI, VI, EI, DT)', 'Sélectivité Logique & Chrono', 'ANSI 50/51, 51N, 67, 87T, 27/59'],
+    code: 'ETAP-STAR // 03',
+    title: 'SÉLECTIVITÉ & PLAN DE PROTECTION',
+    standard: 'IEC 60255 • IEEE 242',
+    metrics: ['Courbes TCC (SI/VI/EI)', 'Sélectivité Logique', 'ANSI 50/51 • 67 • 87T'],
     summary:
-      'Paramétrage complet des relais numériques (Schneider Sepam/Easergy, Siemens Siprotec, ABB Relion, GE Multilin). Coordination amont/aval avec vérification sous Icc max (non-déclenchement intempestif) et Icc min (sensibilité garantie).',
-    asciiFormula: 't(I) = TMS · [ k / ((I / I_s)^α - 1) ]   |   Δt_sel ≥ 250 ms',
+      'Réglage des relais numériques (Sepam, Siprotec, Relion, Multilin) et coordination chronométrique amont/aval.',
+    asciiFormula: 't(I) = TMS · [ k / ((I / Is)^α - 1) ]   |   Δt ≥ 250 ms',
   },
   {
-    code: 'ETAP-DYN // MOD-04',
-    title: 'DÉMARRAGE MOTEUR HT, HARMONIQUES & ARC FLASH',
-    standard: 'IEEE 1584-2018 / NFPA 70E / IEEE 519',
-    metrics: ['Chute ΔU démarrage moteur HT', 'Énergie incidente (cal/cm²)', 'Filtrage THD-U / THD-I & Résonance'],
+    code: 'ETAP-DYN // 04',
+    title: 'MOTEURS HT, HARMONIQUES & ARC FLASH',
+    standard: 'IEEE 1584 • IEEE 519',
+    metrics: ['Démarrage 6.6/11 kV', 'Arc Flash (cal/cm²)', 'Filtres THD-U / THD-I'],
     summary:
-      'Simulation transitoire de démarrage de gros moteurs asynchrones/synchrones 6.6 kV & 11 kV. Études Arc Flash (énergie incidente E_inc, distance limite AFB, choix EPI) et analyse spectrale harmonique avec dimensionnement de filtres.',
-    asciiFormula: 'E_inc = f(I_bf, t_arc, D, G) [cal/cm²]   |   U_start ≥ 80% U_n',
+      'Chute de tension transitoire au démarrage moteur HT, calcul d’énergie incidente Arc Flash (EPI) et filtrage harmonique.',
+    asciiFormula: 'E_inc = f(I_bf, t_arc, D)   |   U_start ≥ 80% Un',
   },
 ];
 
 const CASE_STUDIES = [
   {
-    id: 'CS-01',
-    sector: 'POSTE SOURCE HTB/HTA // 225 kV - 20 kV (2x40 MVA)',
-    scope: 'Étude Load Flow N/N-1 + Court-Circuit IEC 60909 + Sélectivité',
-    result: 'Optimisation des prises OLTC (+1.8% de tenue de tension), validation PdC 31.5 kA et réduction du temps d’élimination de défaut de 420 ms à 140 ms par sélectivité logique.',
+    id: 'REF-01',
+    sector: 'POSTE SOURCE 225 / 20 kV (2×40 MVA)',
+    scope: 'Load Flow N/N-1 • Icc IEC 60909 • Sélectivité',
+    result: 'Validation PdC 31.5 kA et passage du temps d’élimination de défaut de 420 ms à 140 ms (sélectivité logique).',
   },
   {
-    id: 'CS-02',
-    sector: 'INDUSTRIE LOURDE // RÉSEAU 20 kV / 6.6 kV (MOTEURS 4.5 MW)',
-    scope: 'Démarrage moteur dynamique + Compensation réactive + Arc Flash IEEE 1584',
-    result: 'Chute de tension au démarrage limitée à 8.9% (contre 16.4% initialement), relèvement du cos φ global de 0.82 à 0.96, abaissement de la catégorie EPI Arc Flash de Cat. 4 à Cat. 2.',
+    id: 'REF-02',
+    sector: 'INDUSTRIE LOURDE 20 / 6.6 kV (MOTEURS 4.5 MW)',
+    scope: 'Démarrage moteur HT • Batterie HTA • Arc Flash',
+    result: 'Chute ΔU limitée à 8.9% (vs 16.4%), cos φ relevé à 0.96 et réduction Arc Flash de Cat. 4 à Cat. 2.',
   },
   {
-    id: 'CS-03',
-    sector: 'CENTRALE HAUTE PUISSANCE & BESS // RACCORDEMENT HTA/HTB',
-    scope: 'Conformité Grid Code PQ-Capability + Harmoniques + Plan de Protection',
-    result: 'Dimensionnement batterie de condensateurs + gradins d’inductance, conformité gabarit Q(U) au Point de Livraison (PDL) et réglage des protections de découplage (ANSI 27/59/81).',
+    id: 'REF-03',
+    sector: 'CENTRALE EnR & BESS // RACCORDEMENT HTA/HTB',
+    scope: 'Grid Code PQ-Capability • Harmoniques • ANSI 27/59/81',
+    result: 'Conformité gabarit Q(U) au Point de Livraison (PDL) et paramétrage complet de la protection de découplage.',
   },
 ];
+
+function SoduralEmblem({ className = 'brand-emblem' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 120 120"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <polygon
+        points="60,6 108,33 108,87 60,114 12,87 12,33"
+        fill="#07172d"
+        stroke="#5ce1e6"
+        strokeWidth="5"
+      />
+      <line x1="30" y1="34" x2="90" y2="34" stroke="#8fcaff" strokeWidth="4" strokeLinecap="round" />
+      <line x1="30" y1="86" x2="90" y2="86" stroke="#8fcaff" strokeWidth="4" strokeLinecap="round" />
+      <path
+        d="M 24 60 C 36 36, 48 36, 60 60 C 72 84, 84 84, 96 60"
+        stroke="#5ce1e6"
+        strokeOpacity="0.5"
+        strokeWidth="3"
+        fill="none"
+      />
+      <path
+        d="M 66 22 L 42 57 L 61 57 L 54 98 L 78 63 L 59 63 Z"
+        fill="#ffb74d"
+        stroke="#fff4e0"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function App() {
   const vortexRef = useRef(null);
@@ -531,55 +566,56 @@ function App() {
       {/* Top SCADA Telemetry Bar */}
       <header className="scada-topbar">
         <div className="scada-topbar-inner">
-          <div className="telemetry-brand">
+          <a href="#top" className="telemetry-brand">
+            <SoduralEmblem className="brand-emblem" />
             <span className="status-led" aria-hidden="true" />
-            <span>SODURAL // HV-CALC-TERMINAL v4.2</span>
-          </div>
-          <div className="telemetry-metrics">
-            <span>ENGINE: ETAP® / IEC 60909</span>
+            <span>SODURAL // PASCAL SO</span>
+          </a>
+          <div className="telemetry-metrics" aria-hidden="true">
+            <span>ETAP® • IEC 60909</span>
             <span className="telemetry-sep">|</span>
-            <span>GRID: 225 kV / 20 kV / 6.6 kV</span>
-            <span className="telemetry-sep">|</span>
-            <span>COS φ: {gridState.cosPhi}</span>
+            <span>225 / 20 / 6.6 kV</span>
             <span className="telemetry-sep">|</span>
             <span className={isFaultMode ? 'telemetry-alert' : 'telemetry-ok'}>
-              {isFaultMode ? `FAULT I"k3 = ${gridState.ik3_kA} kA` : 'STATUS: NOMINAL 50.00 Hz'}
+              {isFaultMode ? `I"k3 = ${gridState.ik3_kA} kA` : `COS φ ${gridState.cosPhi} • 50 Hz`}
             </span>
           </div>
           <nav className="telemetry-nav" aria-label="Navigation principale">
             <a href="#simulateur-etap">[01. SIMULATEUR SLD]</a>
             <a href="#oscilloscope-ascii">[02. OSCILLOSCOPE & TCC]</a>
-            <a href="#expertise-hv">[03. EXPERTISE ETAP]</a>
+            <a href="#expertise-hv">[03. EXPERTISE]</a>
             <a
               href="https://www.linkedin.com/in/pascalso/"
               target="_blank"
               rel="noreferrer"
               className="topbar-cta"
             >
-              LINKEDIN // PASCAL SO ↗
+              LINKEDIN ↗
             </a>
           </nav>
         </div>
       </header>
 
       {/* Main Hero Screen with ASCII Vortex & SODURAL Wave Logo */}
-      <main className="screen">
+      <main id="top" className="screen">
         <canvas className="ascii-vortex" ref={vortexRef} aria-hidden="true" />
 
         <div className="hero-hud">
-          <div className="hud-corner hud-top-left">
-            <span>SYS_ID: PASCAL_SO // INGÉNIEUR CALCUL HAUTE TENSION</span>
-            <span>SPÉCIALITÉ: LOAD FLOW • COURT-CIRCUIT (Icc) • SÉLECTIVITÉ SUR ETAP®</span>
-          </div>
-
           <a
             className="logo-link"
             href="https://www.linkedin.com/in/pascalso/"
-            aria-label="Sodural, profil LinkedIn de Pascal So"
+            aria-label="Sodural — Pascal So, Ingénieur Calcul Haute Tension et Expert ETAP (LinkedIn)"
             title="Profil LinkedIn de Pascal So"
             target="_blank"
             rel="noreferrer"
           >
+            <div className="logo-header-bar" aria-hidden="true">
+              <span className="logo-header-left">
+                <SoduralEmblem className="brand-emblem-sm" />
+                <span>PASCAL SO // INGÉNIEUR CALCUL HAUTE TENSION (HTB / HTA)</span>
+              </span>
+              <span className="logo-header-right">ETAP® • LOAD FLOW • IEC 60909</span>
+            </div>
             <pre className="ascii-logo" aria-hidden="true">
               {LOGO_ROWS.map((row, rowIndex) => (
                 <span className="ascii-row" key={rowIndex}>
@@ -598,39 +634,36 @@ function App() {
           </a>
 
           <div className="hero-pitch">
-            <p className="hero-badge">
-              [ ARCHITECTURE & ÉTUDES DE RÉSEAUX ÉLECTRIQUES HTB / HTA // ETAP® POWERSTATION ]
-            </p>
             <h1 className="hero-title">
-              Ingénierie de Calcul Haute Tension — <span>Load Flow, Court-Circuit IEC 60909 & Protection</span>
+              Études de Réseaux Électriques HTB / HTA — <span>Load Flow, Court-Circuit Icc & Sélectivité sur ETAP®</span>
             </h1>
             <p className="hero-subtitle">
-              Modélisation numérique de réseaux électriques, dimensionnement Haute Tension, calculs de courants
-              de court-circuit (I&quot;k, ip, Ib, Ith), coordination des protections (ETAP Star) et études transitoires.
+              Notes de calcul réglementaires (IEC 60909, NF C 13-200, IEEE 1584), dimensionnement Haute Tension et
+              coordination des protections numériques.
             </p>
 
             <div className="hero-kpi-strip">
               <div className="kpi-chip">
-                <span className="kpi-label">LOGICIEL DE RÉFÉRENCE</span>
-                <strong>ETAP® (LF / SC / STAR)</strong>
+                <span className="kpi-label">LOGICIEL</span>
+                <strong>ETAP® (LF • SC • STAR)</strong>
               </div>
               <div className="kpi-chip">
-                <span className="kpi-label">NORMES DE CALCUL</span>
-                <strong>IEC 60909 • IEEE C37 • NF C 13-200</strong>
+                <span className="kpi-label">NORMES</span>
+                <strong>IEC 60909 • NF C 13-200</strong>
               </div>
               <div className="kpi-chip">
-                <span className="kpi-label">NIVEAUX DE TENSION</span>
-                <strong>400 kV • 225 kV • 90 kV • 20 kV • 6.6 kV</strong>
+                <span className="kpi-label">TENSIONS</span>
+                <strong>400 kV → 20 kV → 6.6 kV</strong>
               </div>
               <div className="kpi-chip">
-                <span className="kpi-label">VALEURS SIMULÉES</span>
+                <span className="kpi-label">SIMULATEUR LIVE</span>
                 <strong>I&quot;k3 = {gridState.ik3_kA} kA | ip = {gridState.ip_kA} kA</strong>
               </div>
             </div>
 
             <div className="hero-actions">
               <a href="#simulateur-etap" className="btn-scada btn-primary">
-                [ ⚡ LANCER LE SIMULATEUR UNIFILAIRE ETAP ]
+                [ ⚡ TESTER LE SIMULATEUR ETAP ]
               </a>
               <a
                 href="https://www.linkedin.com/in/pascalso/"
@@ -638,7 +671,7 @@ function App() {
                 rel="noreferrer"
                 className="btn-scada btn-secondary"
               >
-                [ CONTACTER PASCAL SO SUR LINKEDIN ↗ ]
+                [ LINKEDIN // PASCAL SO ↗ ]
               </a>
             </div>
           </div>
@@ -773,7 +806,9 @@ function App() {
                   </span>
                   <span>SOLVER: CONVERGED (4 ITÉRATIONS)</span>
                 </div>
-                <pre className={`ascii-sld-pre ${isFaultMode ? 'is-fault' : ''}`}>{asciiSldDiagram}</pre>
+                <pre className={`ascii-sld-pre ${isFaultMode ? 'is-fault' : ''}`} aria-hidden="true">
+                  {asciiSldDiagram}
+                </pre>
               </div>
 
               {/* Live Engineering Report Matrix */}

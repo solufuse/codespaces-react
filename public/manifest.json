@@ -1,8 +1,20 @@
 {
-  "short_name": "Sodural",
-  "name": "Sodural - Site personnel",
-  "start_url": ".",
+  "short_name": "SODURAL",
+  "name": "SODURAL — Pascal So | Ingénieur Calcul Haute Tension & Expert ETAP",
+  "icons": [
+    {
+      "src": "logo-sodural.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#f5f4ed",
-  "background_color": "#f5f4ed"
+  "theme_color": "#050d1c",
+  "background_color": "#050d1c"
 }
