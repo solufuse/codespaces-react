@@ -54,63 +54,195 @@ const FAULT_BUS_CONFIG = {
   },
 };
 
-const EXPERTISE_MODULES = [
+const SQLITE_SCENARIOS_BY_TR = {
+  TR_101: {
+    id: 'TR-101',
+    rating: '225 / 20 kV — 110 MVA (OLTC ±12×1.25%)',
+    uccPct: '12,50',
+    rows: [
+      {
+        scenario: 'LF 2x50 — Nominal 225 kV',
+        htbKv: '225,0 (100,0%)',
+        sHtaMva: '48,420',
+        oltcTap: '+1,25% (Prise +1)',
+        uRameHtaPct: '100,38%',
+        cosHta: '93,8%',
+        cosHtb: '91,4%',
+        pertesMva: '2,41',
+        dispoText: '≈ 62 MVA (55,98%)',
+        reserveIhtb: '56,0%',
+        status: 'OK',
+      },
+      {
+        scenario: 'LF 1x100 — Secours N-1 225 kV',
+        htbKv: '222,8 (99,0%)',
+        sHtaMva: '94,650',
+        oltcTap: '+5,00% (Prise +4)',
+        uRameHtaPct: '99,12%',
+        cosHta: '92,6%',
+        cosHtb: '87,9%',
+        pertesMva: '9,18',
+        dispoText: '≈ 15 MVA (13,95%)',
+        reserveIhtb: '17,9%',
+        status: 'WARN',
+      },
+      {
+        scenario: 'LF Pointe Hiver — 218 kV HTB',
+        htbKv: '218,0 (96,9%)',
+        sHtaMva: '88,120',
+        oltcTap: '+6,25% (Prise +5)',
+        uRameHtaPct: '98,65%',
+        cosHta: '93,1%',
+        cosHtb: '88,8%',
+        pertesMva: '7,95',
+        dispoText: '≈ 22 MVA (19,89%)',
+        reserveIhtb: '24,6%',
+        status: 'OK',
+      },
+      {
+        scenario: 'LF Creux Été — 229 kV HTB',
+        htbKv: '229,0 (101,8%)',
+        sHtaMva: '26,300',
+        oltcTap: '-2,50% (Prise -2)',
+        uRameHtaPct: '100,15%',
+        cosHta: '95,4%',
+        cosHtb: '94,6%',
+        pertesMva: '0,72',
+        dispoText: '≈ 84 MVA (76,09%)',
+        reserveIhtb: '75,5%',
+        status: 'OK',
+      },
+    ],
+  },
+  TR_102: {
+    id: 'TR-102',
+    rating: '225 / 20 kV — 110 MVA (Couplé / Secours)',
+    uccPct: '12,45',
+    rows: [
+      {
+        scenario: 'LF 2x50 — Nominal 225 kV',
+        htbKv: '225,0 (100,0%)',
+        sHtaMva: '48,610',
+        oltcTap: '+1,25% (Prise +1)',
+        uRameHtaPct: '100,41%',
+        cosHta: '93,8%',
+        cosHtb: '91,4%',
+        pertesMva: '2,43',
+        dispoText: '≈ 61 MVA (55,81%)',
+        reserveIhtb: '55,8%',
+        status: 'OK',
+      },
+      {
+        scenario: 'LF 1x100 — Secours N-1 (TR-101 OFF)',
+        htbKv: '222,8 (99,0%)',
+        sHtaMva: '96,180',
+        oltcTap: '+5,00% (Prise +4)',
+        uRameHtaPct: '98,94%',
+        cosHta: '92,4%',
+        cosHtb: '87,6%',
+        pertesMva: '9,44',
+        dispoText: '≈ 14 MVA (12,56%)',
+        reserveIhtb: '16,6%',
+        status: 'WARN',
+      },
+      {
+        scenario: 'LF Démarrage Moteurs HTA',
+        htbKv: '224,1 (99,6%)',
+        sHtaMva: '64,800',
+        oltcTap: '+2,50% (Prise +2)',
+        uRameHtaPct: '97,40%',
+        cosHta: '86,2%',
+        cosHtb: '83,5%',
+        pertesMva: '4,35',
+        dispoText: '≈ 45 MVA (41,09%)',
+        reserveIhtb: '42,5%',
+        status: 'OK',
+      },
+    ],
+  },
+};
+
+const SQLITE_PIPELINE_STEPS = [
   {
-    code: 'ETAP-LF // 01',
-    title: 'LOAD FLOW & BILAN DE PUISSANCE',
-    standard: 'IEC 60364 • NF C 13-200',
-    metrics: ['Profils ΔU% & Pertes I²R', 'Régleurs OLTC', 'Compensation Q (Mvar)'],
-    summary:
-      'Modélisation HTB/HTA (225/90/20 kV), analyse N et N-1, dimensionnement thermique et régulation de tension.',
-    asciiFormula: 'S = P + jQ   |   ΔU% ≈ (R·P + X·Q) / Un²',
+    step: '01 // CONVERSION SQLITE (.lf1s / .si2s)',
+    tables: 'sqlite_master • ILFStudyCase • Isummary • LFSumTotal',
+    detail:
+      'Connexion directe via sqlite3 aux bases binaires ETAP (.lf1s Load Flow / .si2s Court-Circuit) et extraction multi-études en batch.',
+    code: "conn = sqlite3.connect(f_lf1s)  # Lecture directe des tables internes ETAP",
   },
   {
-    code: 'ETAP-SC // 02',
+    step: '02 // GRAPHE TOPOLOGIQUE & PRISES OLTC',
+    tables: 'IXFMR2 • IXFMR3 • IBus • IConnect • LFR • LFSumLoss',
+    detail:
+      'Traversée automatique des nœuds aval (IConnect) et récupération prioritaire de la prise régleur active calculée par le Load Flow (Tap / TapA / TapPos).',
+    code: 'v_prim_ltc = prim_kv * (1 + active_tap_perc / 100.0) ; i_in_ltc = kva_nom / (v_prim_ltc * √3)',
+  },
+  {
+    step: '03 // MATRICES CSV & SYNTHÈSE MULTI-SCÉNARIOS',
+    tables: '6_IXFMR2_Verification_Nominal.csv → Synthese_Transformateurs_Complet.csv',
+    detail:
+      'Consolidation croisée de dizaines de scénarios (LF 1x100, 2x50, N-1) : S apparente HTA, cos φ HTB/HTA, pertes MVA et réserves de courant.',
+    code: 'reserve_p = (1 - (i_act_p / i_in_ltc)) * 100  # Vérification nominale automatisée',
+  },
+];
+
+const EXPERTISE_MODULES = [
+  {
+    code: 'DATA-SQL // 01',
+    title: 'BIG DATA SQLITE & PYTHON POUR ETAP®',
+    standard: 'sqlite3 • .lf1s / .si2s • ETL CSV/XML',
+    metrics: ['Extraction batch multi-scénarios', 'Tables IXFMR2 / LFR / IBus', 'Zéro erreur de saisie'],
+    summary:
+      'Scripts Python dédiés à l’extraction et l’interprétation massive des bases SQLite ETAP (.lf1s, .si2s) pour générer automatiquement les synthèses comparatives.',
+    asciiFormula: '.lf1s (SQLite) ──► Python ETL ──► Synthese_Transformateurs_Complet.csv',
+  },
+  {
+    code: 'ETAP-LF // 02',
+    title: 'LOAD FLOW & VÉRIFICATION TRANSFOS HTB/HTA',
+    standard: 'IEC 60364 • NF C 13-200 • Grid Codes',
+    metrics: ['Prises régleur OLTC (Tap LF)', 'Réserve I_in_LTC (%)', 'Bilan P, Q, Pertes MVA'],
+    summary:
+      'Analyse des régimes N / N-1 (1×100%, 2×50%), calcul automatisé du courant nominal sur prise LTC active, profils de tension HTB/HTA et compensation réactive.',
+    asciiFormula: 'I_in_LTC = S_nom / (√3 · U_prim · (1 + Tap%))   |   Dispo% = 1 - S_p / S_nom',
+  },
+  {
+    code: 'ETAP-SC // 03',
     title: 'COURANTS DE COURT-CIRCUIT (Icc)',
     standard: 'IEC 60909 • ANSI C37',
     metrics: ['I"k3 Max & Min', 'Crête ip', 'Tenue thermique Ith'],
     summary:
-      'Calculs symétriques et asymétriques (triphasé, biphasé, terre). Validation du Pouvoir de Coupure (PdC) et de Fermeture (PdF).',
+      'Calculs symétriques et asymétriques (triphasé, biphasé, terre). Validation du Pouvoir de Coupure (PdC) et de Fermeture (PdF) des disjoncteurs HTB/HTA.',
     asciiFormula: 'I"k3 = (c · Un) / (√3 · Zk)   |   ip = κ · √2 · I"k3',
   },
   {
-    code: 'ETAP-STAR // 03',
-    title: 'SÉLECTIVITÉ & PLAN DE PROTECTION',
-    standard: 'IEC 60255 • IEEE 242',
-    metrics: ['Courbes TCC (SI/VI/EI)', 'Sélectivité Logique', 'ANSI 50/51 • 67 • 87T'],
+    code: 'ETAP-STAR // 04',
+    title: 'SÉLECTIVITÉ TCC, MOTEURS HT & ARC FLASH',
+    standard: 'IEC 60255 • IEEE 1584',
+    metrics: ['Courbes TCC (ANSI 50/51/67/87T)', 'Démarrage moteur HT', 'Arc Flash (cal/cm²)'],
     summary:
-      'Réglage des relais numériques (Sepam, Siprotec, Relion, Multilin) et coordination chronométrique amont/aval.',
+      'Paramétrage des relais de protection numériques, coordination chronométrique/logique, transitoires de démarrage moteur et études Arc Flash.',
     asciiFormula: 't(I) = TMS · [ k / ((I / Is)^α - 1) ]   |   Δt ≥ 250 ms',
-  },
-  {
-    code: 'ETAP-DYN // 04',
-    title: 'MOTEURS HT, HARMONIQUES & ARC FLASH',
-    standard: 'IEEE 1584 • IEEE 519',
-    metrics: ['Démarrage 6.6/11 kV', 'Arc Flash (cal/cm²)', 'Filtres THD-U / THD-I'],
-    summary:
-      'Chute de tension transitoire au démarrage moteur HT, calcul d’énergie incidente Arc Flash (EPI) et filtrage harmonique.',
-    asciiFormula: 'E_inc = f(I_bf, t_arc, D)   |   U_start ≥ 80% Un',
   },
 ];
 
 const CASE_STUDIES = [
   {
-    id: 'REF-01',
-    sector: 'POSTE SOURCE 225 / 20 kV (2×40 MVA)',
-    scope: 'Load Flow N/N-1 • Icc IEC 60909 • Sélectivité',
-    result: 'Validation PdC 31.5 kA et passage du temps d’élimination de défaut de 420 ms à 140 ms (sélectivité logique).',
+    id: 'DATA-01',
+    sector: 'AUTOMATISATION PYTHON / SQLITE // ÉTUDES MULTI-SCÉNARIOS ETAP',
+    scope: 'Parsing direct .lf1s / .si2s • Tables IXFMR2, LFR, LFSumLoss, IConnect',
+    result: 'Traitement instantané de dizaines de cas d’études Load Flow et génération automatisée des tableaux de vérification nominale des transformateurs HTB/HTA.',
   },
   {
     id: 'REF-02',
-    sector: 'INDUSTRIE LOURDE 20 / 6.6 kV (MOTEURS 4.5 MW)',
-    scope: 'Démarrage moteur HT • Batterie HTA • Arc Flash',
-    result: 'Chute ΔU limitée à 8.9% (vs 16.4%), cos φ relevé à 0.96 et réduction Arc Flash de Cat. 4 à Cat. 2.',
+    sector: 'POSTE SOURCE 225 / 20 kV (2×110 MVA & 2×40 MVA)',
+    scope: 'Comparatif automatisé LF 2×50 vs LF 1×100 (N-1) • Prises OLTC • Icc IEC 60909',
+    result: 'Validation des réserves de courant primaire sur prises LTC extrêmes, tenue de tension Rame HTA (20 kV) et conformité PdC 31.5 kA.',
   },
   {
     id: 'REF-03',
-    sector: 'CENTRALE EnR & BESS // RACCORDEMENT HTA/HTB',
-    scope: 'Grid Code PQ-Capability • Harmoniques • ANSI 27/59/81',
-    result: 'Conformité gabarit Q(U) au Point de Livraison (PDL) et paramétrage complet de la protection de découplage.',
+    sector: 'INDUSTRIE LOURDE & CENTRALE EnR // 20 kV / 6.6 kV',
+    scope: 'Bilan Load Flow • Compensation réactive • Sélectivité & Arc Flash',
+    result: 'Optimisation du cos φ HTB/HTA, limitation des chutes de tension transitoires et coordination complète du plan de protection.',
   },
 ];
 
@@ -166,6 +298,7 @@ function App() {
   const [xOverR, setXOverR] = useState(14);
   const [tmsUpstream, setTmsUpstream] = useState(0.32);
   const [flowTick, setFlowTick] = useState(0);
+  const [selectedSqliteTr, setSelectedSqliteTr] = useState('TR_101');
 
   // Animate ASCII flow arrows in SLD
   useEffect(() => {
@@ -582,8 +715,9 @@ function App() {
           </div>
           <nav className="telemetry-nav" aria-label="Navigation principale">
             <a href="#simulateur-etap">[01. SIMULATEUR SLD]</a>
-            <a href="#oscilloscope-ascii">[02. OSCILLOSCOPE & TCC]</a>
-            <a href="#expertise-hv">[03. EXPERTISE]</a>
+            <a href="#sqlite-etap">[02. BIG DATA SQLITE / PYTHON]</a>
+            <a href="#oscilloscope-ascii">[03. OSCILLOSCOPE & TCC]</a>
+            <a href="#expertise-hv">[04. EXPERTISE]</a>
             <a
               href="https://www.linkedin.com/in/pascalso/"
               target="_blank"
@@ -612,9 +746,9 @@ function App() {
             <div className="logo-header-bar" aria-hidden="true">
               <span className="logo-header-left">
                 <SoduralEmblem className="brand-emblem-sm" />
-                <span>PASCAL SO // INGÉNIEUR CALCUL HAUTE TENSION (HTB / HTA)</span>
+                <span>PASCAL SO // INGÉNIEUR CALCUL HAUTE TENSION & DATA ETAP</span>
               </span>
-              <span className="logo-header-right">ETAP® • LOAD FLOW • IEC 60909</span>
+              <span className="logo-header-right">ETAP® • SQLITE (.lf1s / .si2s) • PYTHON</span>
             </div>
             <pre className="ascii-logo" aria-hidden="true">
               {LOGO_ROWS.map((row, rowIndex) => (
@@ -635,25 +769,25 @@ function App() {
 
           <div className="hero-pitch">
             <h1 className="hero-title">
-              Études de Réseaux Électriques HTB / HTA — <span>Load Flow, Court-Circuit Icc & Sélectivité sur ETAP®</span>
+              Ingénierie Haute Tension HTB / HTA & <span>Exploitation Big Data SQLite / Python sur ETAP®</span>
             </h1>
             <p className="hero-subtitle">
-              Notes de calcul réglementaires (IEC 60909, NF C 13-200, IEEE 1584), dimensionnement Haute Tension et
-              coordination des protections numériques.
+              Extraction automatisée des bases SQLite ETAP (<code>.lf1s</code> / <code>.si2s</code>), synthèses
+              multi-scénarios Load Flow (prises OLTC, réserves transfos) et calculs de court-circuit IEC 60909.
             </p>
 
             <div className="hero-kpi-strip">
               <div className="kpi-chip">
-                <span className="kpi-label">LOGICIEL</span>
-                <strong>ETAP® (LF • SC • STAR)</strong>
+                <span className="kpi-label">DATA PIPELINE</span>
+                <strong>SQLite (.lf1s / .si2s) → Python</strong>
               </div>
               <div className="kpi-chip">
-                <span className="kpi-label">NORMES</span>
-                <strong>IEC 60909 • NF C 13-200</strong>
+                <span className="kpi-label">TABLES INTERNES ETAP</span>
+                <strong>IXFMR2 • LFR • IBus • LFSumLoss</strong>
               </div>
               <div className="kpi-chip">
-                <span className="kpi-label">TENSIONS</span>
-                <strong>400 kV → 20 kV → 6.6 kV</strong>
+                <span className="kpi-label">ÉTUDES HTB / HTA</span>
+                <strong>Load Flow • Icc IEC 60909 • TCC</strong>
               </div>
               <div className="kpi-chip">
                 <span className="kpi-label">SIMULATEUR LIVE</span>
@@ -662,16 +796,11 @@ function App() {
             </div>
 
             <div className="hero-actions">
-              <a href="#simulateur-etap" className="btn-scada btn-primary">
-                [ ⚡ TESTER LE SIMULATEUR ETAP ]
+              <a href="#sqlite-etap" className="btn-scada btn-primary">
+                [ 🗄️ VOIR LE PIPELINE SQLITE / PYTHON ETAP ]
               </a>
-              <a
-                href="https://www.linkedin.com/in/pascalso/"
-                target="_blank"
-                rel="noreferrer"
-                className="btn-scada btn-secondary"
-              >
-                [ LINKEDIN // PASCAL SO ↗ ]
+              <a href="#simulateur-etap" className="btn-scada btn-secondary">
+                [ ⚡ SIMULATEUR SLD LIVE ]
               </a>
             </div>
           </div>
@@ -874,8 +1003,97 @@ function App() {
         </div>
       </section>
 
-      {/* SECTION 2: ASCII Oscilloscope & Protection Coordination TCC */}
-      <section id="oscilloscope-ascii" className="scada-section scada-section-alt">
+      {/* SECTION 2: Big Data SQLite (.lf1s / .si2s) & Python ETAP Pipeline */}
+      <section id="sqlite-etap" className="scada-section scada-section-alt">
+        <div className="section-container">
+          <div className="section-header">
+            <div>
+              <p className="section-eyebrow">// TERMINAL DATA 02 — PYTHON & SQLITE3 ETAP® (.lf1s / .si2s)</p>
+              <h2 className="section-title">
+                Interprétation Big Data SQLite : <span>Synthèse Automatisée Multi-Scénarios des Transformateurs</span>
+              </h2>
+            </div>
+            <div className="mode-switcher" role="group" aria-label="Sélection du transformateur analysé">
+              <button
+                type="button"
+                className={`mode-btn ${selectedSqliteTr === 'TR_101' ? 'is-active' : ''}`}
+                onClick={() => setSelectedSqliteTr('TR_101')}
+              >
+                [ TR-101 // 225/20 kV — 110 MVA ]
+              </button>
+              <button
+                type="button"
+                className={`mode-btn ${selectedSqliteTr === 'TR_102' ? 'is-active' : ''}`}
+                onClick={() => setSelectedSqliteTr('TR_102')}
+              >
+                [ TR-102 // 225/20 kV — 110 MVA ]
+              </button>
+            </div>
+          </div>
+
+          {/* Pipeline Architecture Strip (Extract_Data.py -> Export_Verif_TR.py) */}
+          <div className="sqlite-pipeline-grid">
+            {SQLITE_PIPELINE_STEPS.map((item) => (
+              <div key={item.step} className="sqlite-step-card">
+                <div className="sqlite-step-top">
+                  <span className="module-code">{item.step}</span>
+                  <span className="module-std">{item.tables}</span>
+                </div>
+                <p className="sqlite-step-desc">{item.detail}</p>
+                <code className="sqlite-code-line">{item.code}</code>
+              </div>
+            ))}
+          </div>
+
+          {/* Interactive Multi-Scenario Transformer Verification Table */}
+          <div className="terminal-window sqlite-table-window">
+            <div className="terminal-bar">
+              <span>
+                EXPORT AUTOMATISÉ PYTHON // Synthese_Transformateurs_Complet.csv —{' '}
+                {SQLITE_SCENARIOS_BY_TR[selectedSqliteTr].id} ({SQLITE_SCENARIOS_BY_TR[selectedSqliteTr].rating})
+              </span>
+              <span>Ucc = {SQLITE_SCENARIOS_BY_TR[selectedSqliteTr].uccPct} %</span>
+            </div>
+            <div className="sqlite-table-scroll">
+              <table className="sqlite-matrix-table">
+                <thead>
+                  <tr>
+                    <th>Scénario Load Flow (.lf1s)</th>
+                    <th>Tension HTB (kV / %Un)</th>
+                    <th>S app. HTA (MVA)</th>
+                    <th>Prise OLTC (Tap LF)</th>
+                    <th>Tension Rame HTA (%Un=20kV)</th>
+                    <th>Cos φ HTA / HTB</th>
+                    <th>Pertes TR (MVA)</th>
+                    <th>Puissance Dispo MVA (%)</th>
+                    <th>Réserve I_in_LTC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SQLITE_SCENARIOS_BY_TR[selectedSqliteTr].rows.map((row) => (
+                    <tr key={row.scenario}>
+                      <td className="cell-scenario">{row.scenario}</td>
+                      <td>{row.htbKv}</td>
+                      <td className="cell-strong">{row.sHtaMva} MVA</td>
+                      <td className="cell-cyan">{row.oltcTap}</td>
+                      <td>{row.uRameHtaPct}</td>
+                      <td>
+                        {row.cosHta} / {row.cosHtb}
+                      </td>
+                      <td>{row.pertesMva} MVA</td>
+                      <td className={row.status === 'WARN' ? 'val-warn' : 'val-ok'}>{row.dispoText}</td>
+                      <td className={row.status === 'WARN' ? 'val-warn' : 'val-ok'}>{row.reserveIhtb}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: ASCII Oscilloscope & Protection Coordination TCC */}
+      <section id="oscilloscope-ascii" className="scada-section">
         <div className="section-container">
           <div className="section-header">
             <div>

@@ -833,6 +833,99 @@
   line-height: 1.55;
 }
 
+/* SQLite / Python ETAP Data Pipeline Section */
+.sqlite-pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.sqlite-step-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--border-grid);
+  background: var(--bg-panel);
+}
+
+.sqlite-step-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sqlite-step-desc {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.sqlite-code-line {
+  display: block;
+  padding: 8px 10px;
+  border-left: 2px solid var(--cyan);
+  background: var(--bg-terminal);
+  color: var(--blue-bright);
+  font-size: 10.5px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.sqlite-table-window {
+  margin-top: 4px;
+}
+
+.sqlite-table-scroll {
+  overflow-x: auto;
+}
+
+.sqlite-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.sqlite-matrix-table th,
+.sqlite-matrix-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(114, 184, 255, 0.14);
+  white-space: nowrap;
+}
+
+.sqlite-matrix-table th {
+  background: rgba(8, 21, 41, 0.9);
+  color: var(--blue-bright);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sqlite-matrix-table tbody tr:hover {
+  background: rgba(92, 225, 230, 0.05);
+}
+
+.cell-scenario {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.cell-strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.cell-cyan {
+  color: var(--cyan);
+  font-weight: 700;
+}
+
 /* Footer */
 .scada-footer {
   padding: 36px 24px;
@@ -866,7 +959,8 @@
   .scope-layout,
   .modules-grid,
   .cases-grid,
-  .report-grid {
+  .report-grid,
+  .sqlite-pipeline-grid {
     grid-template-columns: 1fr;
   }
 }
