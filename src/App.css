@@ -157,7 +157,7 @@
 }
 
 .logo-link {
-  display: block;
+  display: inline-block;
   position: relative;
   z-index: 1;
   max-width: 100%;
@@ -166,6 +166,7 @@
   background: rgba(3, 10, 22, 0.52);
   color: #dceeff;
   text-decoration: none;
+  overflow: hidden;
   transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
@@ -182,7 +183,7 @@
 .ascii-logo {
   margin: 0;
   color: #dceeff;
-  font: 700 clamp(3.2px, 1.15vw, 20px)/1.12 var(--mono);
+  font: 700 clamp(3.2px, 1.05vw, 15.5px)/1.12 var(--mono);
   white-space: pre;
 }
 
